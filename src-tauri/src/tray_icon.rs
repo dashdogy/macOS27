@@ -2,14 +2,16 @@ use std::process;
 use std::time::{Duration, Instant};
 
 use tauri::{
+    async_runtime,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
     ActivationPolicy, Manager, Runtime,
 };
 use tauri_plugin_nspopover::{AppExt, WindowExt as _};
 use tauri_specta::Event;
+use tokio::sync::mpsc;
 
-use crate::{event::PowerUpdatedEvent, ext::WebviewWindowExt};
+use crate::{event::PowerUpdatedEvent, ext::WebviewWindowExt, local::SenderMessage};
 
 pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
     let show = MenuItemBuilder::new("Show Window").build(app)?;
@@ -61,10 +63,18 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
         } = event
         {
             let handle = tray_handle.app_handle();
-            if handle.is_popover_shown() {
-                handle.hide_popover();
-            } else {
+            let showing = !handle.is_popover_shown();
+            if showing {
                 handle.show_popover();
+            } else {
+                handle.hide_popover();
+            }
+            // Notify sender of popover visibility change
+            if let Some(tx) = handle.try_state::<mpsc::Sender<SenderMessage>>() {
+                let tx = tx.inner().clone();
+                async_runtime::spawn(async move {
+                    let _ = tx.send(SenderMessage::WindowVisibilityChanged(showing)).await;
+                });
             }
         }
     });

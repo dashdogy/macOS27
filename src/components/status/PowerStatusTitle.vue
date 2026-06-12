@@ -7,14 +7,19 @@ const rawData = usePowerRaw()
 
 const showRemainDuration = ref(true)
 const buttonText = computed(() => {
+  const totalSecs = power.value.timeRemain.secs
+  // Guard against bogus values (e.g. 1092h when battery held at 80%)
+  if (totalSecs <= 0 || totalSecs > 86400) {
+    return '—'
+  }
   if (showRemainDuration.value) {
-    const minutes = power.value.timeRemain.secs / 60
-    const hours = Math.floor(minutes / 60)
-
-    return `${hours}h ${minutes % 60}m`
+    const totalMinutes = Math.floor(totalSecs / 60)
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return `${hours}h ${minutes}m`
   }
   return format(
-    addSeconds(new Date(), power.value.timeRemain.secs),
+    addSeconds(new Date(), totalSecs),
     'HH:mm',
   )
 })
