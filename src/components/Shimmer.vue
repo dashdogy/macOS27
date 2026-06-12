@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
-import { MotionDirective as motion } from '@vueuse/motion'
 
 interface ShimmerProps {
   as?: keyof HTMLElementTagNameMap
@@ -12,41 +11,41 @@ interface ShimmerProps {
   repeatDelay?: number
 }
 
-defineOptions({
-  directives: {
-    motion: motion(),
-  },
-})
-
 const props = defineProps<ShimmerProps>()
+const preference = usePreference()
+
+const animDuration = computed(() => `${(props.duration ?? 1200) + (props.repeatDelay ?? 0)}ms`)
+const animDelay = computed(() => `${props.delay ?? 200}ms`)
 </script>
 
 <template>
   <div
-    v-motion
-    :initial="{ backgroundPosition: '100% center' }"
-    :enter="{
-      backgroundPosition: '0% center',
-      transition: {
-        repeat: Infinity,
-        duration: 1200,
-        delay: props.delay ?? 200,
-        repeatDelay: props.repeatDelay ?? 0,
-        ease: 'linear',
-      },
-    }"
     :class="cn(
       'relative inline-block bg-[length:250%_100%,auto]',
       '[--base-color:#a1a1aa] [--base-gradient-color:#000]',
       '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
       'dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
+      preference.animationsEnabled ? 'shimmer-animate' : '',
       props.class,
     )"
     :style="{
       '--spread': `${props.spread ?? 20}px`,
+      '--shimmer-duration': animDuration,
+      '--shimmer-delay': animDelay,
       'background-image': 'var(--bg), linear-gradient(var(--base-color), var(--base-color))',
     }"
   >
     <slot />
   </div>
 </template>
+
+<style scoped>
+@keyframes shimmer-slide {
+  from { background-position: 100% center; }
+  to { background-position: 0% center; }
+}
+.shimmer-animate {
+  will-change: background-position;
+  animation: shimmer-slide var(--shimmer-duration, 1200ms) linear var(--shimmer-delay, 200ms) infinite;
+}
+</style>
