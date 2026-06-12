@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { formatChargingDuration } from '@/lib/format'
 import { BatteryCharging, BatteryFull, BatteryLow, BatteryMedium } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
 
 const power = usePower()
-const { t } = useI18n()
 </script>
 
 <template>
@@ -28,13 +26,19 @@ const { t } = useI18n()
 
       <div
         v-if="!power.isLoading"
-        class="text-sm font-medium truncate"
+        class="text-xs font-medium text-right"
         :class="power.isCharging ? 'text-blue-500' : 'text-muted-foreground'"
       >
         <span v-if="power.isCharging && power.batteryLevel === 100">{{ $t('status.fully_charged') }}</span>
         <template v-else>
-          <span class="font-semibold mr-1">{{ formatChargingDuration(power.timeRemain.secs, t) }}</span>
-          <span>{{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}</span>
+          <div>
+            <span class="text-muted-foreground/60 mr-1">est.</span>
+            <span class="font-semibold">{{ formatChargingDuration(power.timeRemain.secs) }}</span>
+            <span class="ml-1">{{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}</span>
+          </div>
+          <div class="text-[10px] text-muted-foreground/50">
+            <span>now: {{ formatChargingDuration(power.instantTimeRemain.secs) }}</span>
+          </div>
         </template>
       </div>
       <Skeleton v-else class="w-32 h-5" />

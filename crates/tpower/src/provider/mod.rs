@@ -34,6 +34,7 @@ pub struct NormalizedResource {
     pub is_local: bool,
     pub is_charging: bool,
     pub time_remain: Duration,
+    pub instant_time_remain: Duration,
     pub last_update: i64,
     pub adapter_name: Option<String>,
     pub cycle_count: i32,
@@ -137,7 +138,8 @@ impl From<&IORegistry> for NormalizedResource {
         Self {
             is_local: false,
             is_charging: io.is_charging,
-            time_remain: Duration::from_secs(io.time_remaining as u64 * 60),
+            time_remain: Duration::from_secs(io.time_remaining.max(0) as u64 * 60),
+            instant_time_remain: Duration::from_secs(io.time_remaining.max(0) as u64 * 60),
             last_update: io.update_time,
             adapter_name: io
                 .adapter_details
@@ -177,9 +179,16 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
             is_local: true,
             last_update: io.update_time,
             is_charging: smc.is_charging(),
-            // Use OS-smoothed time estimate (AvgTimeToEmpty/AvgTimeToFull)
-            // instead of jittery raw SMC sensor values
+            // OS-smoothed estimate (AvgTimeToEmpty/AvgTimeToFull)
             time_remain: Duration::from_secs(io.time_remaining.max(0) as u64 * 60),
+            // Instantaneous estimate from raw SMC sensors
+            instant_time_remain: Duration::from_secs_f32(
+                60.0 * if smc.is_charging() {
+                    smc.time_to_full
+                } else {
+                    smc.time_to_empty
+                },
+            ),
             adapter_name: io
                 .adapter_details
                 .name

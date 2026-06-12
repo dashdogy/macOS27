@@ -7,14 +7,14 @@ const rawData = usePowerRaw()
 
 const showRemainDuration = ref(true)
 const buttonText = computed(() => {
-  const totalSecs = power.value.timeRemain.secs
+  const totalSecs = power.value.instantTimeRemain.secs
   if (totalSecs <= 0 || totalSecs > 86400) return '—'
 
   if (showRemainDuration.value) {
     const totalMinutes = Math.floor(totalSecs / 60)
     const hours = Math.floor(totalMinutes / 60)
     const minutes = totalMinutes % 60
-    return `${hours}h ${minutes}m`
+    return `⚡ ${hours}h ${minutes}m`
   }
   return `until ${format(addSeconds(new Date(), totalSecs), 'HH:mm')}`
 })
