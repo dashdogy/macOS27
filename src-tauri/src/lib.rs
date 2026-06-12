@@ -14,8 +14,9 @@ use objc2_app_kit::{
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use sqlx::{Pool, Sqlite};
-use tauri::{ActivationPolicy, AppHandle, Manager, RunEvent, State, Window, WindowEvent};
+use tauri::{async_runtime, ActivationPolicy, AppHandle, Manager, RunEvent, State, Window, WindowEvent};
 use tauri_specta::{collect_commands, collect_events};
+use tokio::sync::mpsc;
 use tpower::ffi::InterfaceType;
 use tray_icon::setup_tray_icon;
 use util::setup_traffic_light_positioner;
@@ -182,10 +183,13 @@ pub fn run() {
             setup_database(app.handle().clone());
 
             setup_tray_icon(app)?;
-            setup_sender_with_events(app);
+            let sender_tx = setup_sender_with_events(app);
             start_device_sender(app.app_handle().clone());
             setup_device_listener(app.app_handle().clone());
             setup_history_recorder(app.app_handle().clone());
+
+            // Store sender_tx for window visibility notifications
+            app.manage(sender_tx);
 
             setup_traffic_light_positioner(app.main_window().unwrap());
 
@@ -222,6 +226,14 @@ fn handle_window_event(window: &Window, event: &WindowEvent) {
                     .app_handle()
                     .set_activation_policy(ActivationPolicy::Accessory)
                     .unwrap();
+
+                // Notify sender that no windows are visible
+                if let Some(tx) = window.try_state::<mpsc::Sender<local::SenderMessage>>() {
+                    let tx = tx.inner().clone();
+                    async_runtime::spawn(async move {
+                        let _ = tx.send(local::SenderMessage::WindowVisibilityChanged(false)).await;
+                    });
+                }
             }
             WindowEvent::ThemeChanged(theme) => {
                 println!("Theme changed to: {}", theme);

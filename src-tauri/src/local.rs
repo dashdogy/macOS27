@@ -18,6 +18,7 @@ pub enum SenderMessage {
     ChangeInterval(Duration),
     ChangeStatusBarItem(StatusBarItem),
     StatusBarShowCharging(bool),
+    WindowVisibilityChanged(bool),
 }
 
 pub fn status_bar_text(
@@ -77,10 +78,10 @@ pub fn start_sender<R: Runtime>(
         .unwrap_or(true);
 
     async_runtime::spawn(async move {
-        let mut last_status_text = String::new();
         let mut last_system_total: f32 = 0.0;
         let mut last_battery_level: f32 = 0.0;
         let mut last_charging = false;
+        let mut any_window_visible = false;
 
         loop {
             select! {
@@ -88,11 +89,16 @@ pub fn start_sender<R: Runtime>(
                     let smc = smc_conn.read_sensor();
 
                     // Always emit tray update (throttled in tray_icon.rs)
-                    let updated = PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging);
-                    updated.emit(&app).unwrap();
+                    PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
+                        .emit(&app)
+                        .unwrap();
 
-                    // Only emit PowerTickEvent to frontend when data changes meaningfully:
-                    // >0.3W system power delta, >1% battery delta, or charging state change
+                    // Skip frontend events entirely when no windows are visible
+                    if !any_window_visible {
+                        continue;
+                    }
+
+                    // Only emit PowerTickEvent when data changes meaningfully
                     let charging_changed = smc.is_charging() != last_charging;
                     let power_delta = (smc.system_total - last_system_total).abs();
                     let battery_delta = (smc.current_capacity - last_battery_level).abs();
@@ -139,6 +145,19 @@ pub fn start_sender<R: Runtime>(
                         PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
                             .emit(&app)
                             .unwrap();
+                    },
+                    SenderMessage::WindowVisibilityChanged(visible) => {
+                        any_window_visible = visible;
+                        // Send immediate update when a window becomes visible
+                        if visible {
+                            let smc = smc_conn.read_sensor();
+                            PowerTickEvent {
+                                data: (&get_mac_ioreg().unwrap(), &smc).into(),
+                            }.emit(&app).unwrap();
+                            last_system_total = smc.system_total;
+                            last_battery_level = smc.current_capacity;
+                            last_charging = smc.is_charging();
+                        }
                     }
                 }
             }
@@ -146,17 +165,18 @@ pub fn start_sender<R: Runtime>(
     })
 }
 
-pub fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) {
+pub fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) -> mpsc::Sender<SenderMessage> {
     let app = app.app_handle();
     let (sender_tx, rx) = mpsc::channel(10);
     start_sender(app, rx);
 
-    // send an immediate update when the main window is loaded
+    // send an immediate update and mark visible when the main window is loaded
     let tx = sender_tx.clone();
     WindowLoadedEvent::listen(app, move |_| {
         let tx = tx.clone();
         async_runtime::spawn(async move {
-            tx.send(SenderMessage::ImmediateSend).await.unwrap();
+            let _ = tx.send(SenderMessage::WindowVisibilityChanged(true)).await;
+            let _ = tx.send(SenderMessage::ImmediateSend).await;
         });
     });
 
@@ -182,4 +202,6 @@ pub fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) {
             });
         }
     });
+
+    sender_tx
 }
