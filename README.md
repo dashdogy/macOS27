@@ -1,8 +1,31 @@
-# Powerflow
+# Powerflow (Performance Fork)
+
+> **This is a personal fork of [lzt1008/powerflow](https://github.com/lzt1008/powerflow)** with performance optimizations to reduce WindowServer, CPU, and GPU overhead. All original features are preserved. Full credit to the original author.
 
 ![Powerflow Screenshot](https://raw.githubusercontent.com/lzt1008/powerflow/assets/screenshot.png)
 
 Powerflow is a macOS application designed to monitor the **power usage** and **charging status** of your devices. With Powerflow, you can gain insights into your device's power consumption.
+
+## What's Different in This Fork
+
+This fork addresses high WindowServer CPU and GPU usage caused by frequent UI updates:
+
+- **Throttled tray icon updates** — only redraws when the displayed value changes
+- **Increased default poll interval** — 3s instead of 1.5s (power doesn't change that fast)
+- **Delta-based event emission** — skips frontend updates when data hasn't changed
+- **Skip events when windows are hidden** — zero WebKit work in background (the normal state for a menu bar app)
+- **Replaced JS-driven animations with CSS** — removed `@vueuse/motion`, using GPU-composited CSS keyframes
+- **Removed NumberFlow animated numbers** — eliminated DOM thrashing on value updates
+- **Lazy-loaded chart component** — 199KB deferred until chart is visible
+- **Fixed time display bug** — bogus "1092h" values when battery held at 80%
+
+### Results
+
+| Metric | Original | This Fork |
+|--------|----------|-----------|
+| GPU utilization | 66% | 29% (0% when hidden) |
+| Frontend events (idle) | Every 1.5s | Only on data change |
+| Bundle size (setup.js) | 366KB | 330KB |
 
 ## Features
 

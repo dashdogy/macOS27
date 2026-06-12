@@ -3675,7 +3675,7 @@ dependencies = [
 
 [[package]]
 name = "powerflow"
-version = "0.2.2"
+version = "0.2.2-lmqf.1"
 dependencies = [
  "bincode",
  "chrono",
