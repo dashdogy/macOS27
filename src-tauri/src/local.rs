@@ -65,7 +65,7 @@ pub fn start_sender<R: Runtime>(
     let mut timer = time::interval(Duration::from_millis(
         app.pinia()
             .try_get::<u64>("preference", "updateInterval")
-            .unwrap_or(2000),
+            .unwrap_or(3000),
     ));
     let mut status_bar_item = app
         .pinia()
