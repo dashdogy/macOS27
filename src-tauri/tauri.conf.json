@@ -24,7 +24,7 @@
         "label": "popover",
         "url": "popover.html",
         "width": 352,
-        "height": 150,
+        "height": 170,
         "titleBarStyle": "Transparent",
         "hiddenTitle": true,
         "alwaysOnTop": true,
