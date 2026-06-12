@@ -38,9 +38,16 @@ pub fn status_bar_text(
 
 impl PowerUpdatedEvent {
     pub fn new(value: f32) -> Self {
-        // Right-align to 4 chars (e.g. " 9.8 w", "10.2 w") to prevent
-        // menu bar width jitter when the value changes (#5)
-        Self(format!("{:4.1} w", value))
+        // Compact format: drop decimal above 10W, use lowercase "w" with no space
+        // to minimize menu bar real estate. Fixed width to prevent jitter (#5).
+        let text = if value >= 100.0 {
+            format!("{:.0}w", value)
+        } else if value >= 10.0 {
+            format!("{:2.0}w", value)
+        } else {
+            format!("{:.1}w", value)
+        };
+        Self(text)
     }
 
     pub fn new_with(
