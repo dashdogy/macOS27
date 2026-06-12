@@ -120,12 +120,15 @@ const currentPower = computed<RawPowerData>(() => {
 })
 
 export function usePower() {
-  return computed(() => ({
-    ...currentPower.value.data,
-    isLoading: Object.keys(currentPower.value.data).length === 0 || vis.value === 'hidden',
-    isRemote: tab.value !== 'local',
-    statistics: currentPower.value.statistics,
-  }))
+  return computed(() => {
+    const data = currentPower.value.data
+    return {
+      ...data,
+      isLoading: Object.keys(data).length === 0 || vis.value === 'hidden',
+      isRemote: tab.value !== 'local',
+      statistics: currentPower.value.statistics,
+    }
+  })
 }
 
 export function usePowerData() {

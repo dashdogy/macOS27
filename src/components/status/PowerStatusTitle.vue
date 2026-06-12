@@ -5,26 +5,10 @@ import { ArrowUpDown } from 'lucide-vue-next'
 const power = usePower()
 const rawData = usePowerRaw()
 
-// Smooth time remaining over a rolling window to reduce jitter
-const timeHistory: number[] = []
-const MAX_SAMPLES = 20 // ~60s at 3s interval
-
-const smoothedSecs = computed(() => {
-  const raw = power.value.timeRemain.secs
-  if (raw <= 0 || raw > 86400) return 0
-
-  timeHistory.push(raw)
-  if (timeHistory.length > MAX_SAMPLES) timeHistory.shift()
-
-  // Use median to resist outliers
-  const sorted = [...timeHistory].sort((a, b) => a - b)
-  return sorted[Math.floor(sorted.length / 2)]
-})
-
 const showRemainDuration = ref(true)
 const buttonText = computed(() => {
-  const totalSecs = smoothedSecs.value
-  if (totalSecs <= 0) return '—'
+  const totalSecs = power.value.timeRemain.secs
+  if (totalSecs <= 0 || totalSecs > 86400) return '—'
 
   if (showRemainDuration.value) {
     const totalMinutes = Math.floor(totalSecs / 60)

@@ -177,13 +177,9 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
             is_local: true,
             last_update: io.update_time,
             is_charging: smc.is_charging(),
-            time_remain: Duration::from_secs_f32(
-                60.0 * if smc.is_charging() {
-                    smc.time_to_full
-                } else {
-                    smc.time_to_empty
-                },
-            ),
+            // Use OS-smoothed time estimate (AvgTimeToEmpty/AvgTimeToFull)
+            // instead of jittery raw SMC sensor values
+            time_remain: Duration::from_secs(io.time_remaining.max(0) as u64 * 60),
             adapter_name: io
                 .adapter_details
                 .name
