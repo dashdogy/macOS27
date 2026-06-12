@@ -44,17 +44,17 @@ const wattageTooltip = computed(() => {
         <Skeleton class="w-full h-3" />
         <Skeleton class="w-full h-4" />
       </div>
-      <div v-else class="p-4 space-y-3">
+      <div v-else class="p-4 space-y-3 font-sans">
         <!-- Row 1: Battery % + Wattage -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between text-base">
           <div class="flex items-center gap-2">
-            <span class="text-xl font-bold">🔋 {{ power.batteryLevel.toFixed(0) }}%</span>
-            <span class="text-xs text-foreground/60 font-mono">
+            <span class="font-semibold">🔋 {{ power.batteryLevel.toFixed(0) }}%</span>
+            <span class="text-foreground/50">
               {{ power.isCharging ? power.adapterName : $t('status.on_battery') }}
             </span>
           </div>
           <CommonTooltip :content="wattageTooltip" as-child>
-            <span class="text-xl font-bold font-mono tabular-nums cursor-default">
+            <span class="font-semibold tabular-nums cursor-default">
               {{ (power.isCharging ? power.systemIn : power.systemLoad).toFixed(1) }}w
             </span>
           </CommonTooltip>
@@ -64,17 +64,17 @@ const wattageTooltip = computed(() => {
         <PowerStatusBar />
 
         <!-- Row 3: Time estimates -->
-        <div class="flex items-center justify-between text-sm">
-          <span v-if="osDuration" class="text-foreground/70">
+        <div class="flex items-center justify-between text-sm text-foreground/60">
+          <span v-if="osDuration">
             est. <span class="font-semibold" :class="power.isCharging ? 'text-blue-500' : 'text-foreground'">{{ osDuration }}</span>
             {{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}
           </span>
-          <span v-else class="text-foreground/50">—</span>
-          <span v-if="untilTime" class="font-mono text-foreground/70">until {{ untilTime }}</span>
+          <span v-else>—</span>
+          <span v-if="untilTime">until <span class="font-semibold text-foreground">{{ untilTime }}</span></span>
         </div>
 
         <!-- Row 4: Power breakdown (local only) -->
-        <div v-if="!power.isRemote" class="flex items-center gap-3 text-xs text-foreground/50 font-mono">
+        <div v-if="!power.isRemote" class="flex items-center gap-3 text-sm text-foreground/50">
           <span>Screen <span class="font-semibold text-foreground/80">{{ (power.brightnessPower || 0).toFixed(1) }}w</span></span>
           <span>·</span>
           <span>SoC <span class="font-semibold text-foreground/80">{{ (power.heatpipePower || 0).toFixed(1) }}w</span></span>
