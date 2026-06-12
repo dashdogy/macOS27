@@ -6,8 +6,7 @@ import { useDocumentVisibility } from '@vueuse/core'
 import { computed, reactive } from 'vue'
 import { useTab } from './useTab'
 
-const MAX_STATISTICS_LENGTH = 20
-const LOCAL_UPDATE_INTERVAL = 3
+const MAX_STATISTICS_LENGTH = 15
 
 export interface StatisticData {
   'time': string
@@ -33,15 +32,10 @@ const localPowerData: Reactive<RawPowerData> = reactive({
   statistics: [],
 })
 
-let localUpdateCount = 0
-
+// With delta-based emission from the backend, every tick now represents
+// a meaningful data change — no need for a frontend-side skip counter.
 events.powerTickEvent.listen(async ({ payload: { data } }) => {
   localPowerData.data = data
-
-  localUpdateCount++
-  if (localUpdateCount < LOCAL_UPDATE_INTERVAL)
-    return
-  localUpdateCount = 0
 
   trimStatistics(localPowerData.statistics)
 
