@@ -60,8 +60,16 @@ const wattageTooltip = computed(() => {
           </CommonTooltip>
         </div>
 
-        <!-- Row 2: Power bar -->
-        <PowerStatusBar />
+        <!-- Row 2: Power bar + breakdown labels inline -->
+        <div class="space-y-1">
+          <PowerStatusBar />
+          <div v-if="!power.isRemote" class="flex items-center gap-2 text-xs text-foreground/50">
+            <span>Screen {{ (power.brightnessPower || 0).toFixed(1) }}w</span>
+            <span>·</span>
+            <span>SoC {{ (power.heatpipePower || 0).toFixed(1) }}w</span>
+            <span v-if="power.isCharging">· Loss {{ (power.efficiencyLoss || 0).toFixed(0) }}mw</span>
+          </div>
+        </div>
 
         <!-- Row 3: Time estimates -->
         <div class="flex items-center justify-between text-sm text-foreground/60">
@@ -71,15 +79,6 @@ const wattageTooltip = computed(() => {
           </span>
           <span v-else>—</span>
           <span v-if="untilTime">until <span class="font-semibold text-foreground">{{ untilTime }}</span></span>
-        </div>
-
-        <!-- Row 4: Power breakdown (local only) -->
-        <div v-if="!power.isRemote" class="flex items-center gap-3 text-sm text-foreground/50">
-          <span>Screen <span class="font-semibold text-foreground/80">{{ (power.brightnessPower || 0).toFixed(1) }}w</span></span>
-          <span>·</span>
-          <span>SoC <span class="font-semibold text-foreground/80">{{ (power.heatpipePower || 0).toFixed(1) }}w</span></span>
-          <span v-if="power.isCharging">·</span>
-          <span v-if="power.isCharging">Loss <span class="font-semibold text-foreground/80">{{ (power.efficiencyLoss || 0).toFixed(0) }}mw</span></span>
         </div>
       </div>
     </template>
