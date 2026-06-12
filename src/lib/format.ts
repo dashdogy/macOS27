@@ -3,13 +3,14 @@ import type { useI18n } from 'vue-i18n'
 import { type FormatDistanceToken, formatDistanceToNow, type Locale } from 'date-fns'
 import { enUS, zhCN } from 'date-fns/locale'
 
-export function formatChargingDuration(seconds: number, t: ReturnType<typeof useI18n>['t']) {
+export function formatChargingDuration(seconds: number, _t?: ReturnType<typeof useI18n>['t']) {
   if (seconds <= 0 || seconds > 86400) {
     return '—'
   }
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
-  return hours > 0 ? `${hours} ${t('time.hour', hours)} ${minutes} ${t('time.minute', minutes)}` : `${minutes} ${t('time.minute', minutes)}`
+  // Abbreviated format to prevent truncation in the popover
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
 }
 
 export const localeMap = {

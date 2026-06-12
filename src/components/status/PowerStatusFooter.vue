@@ -22,7 +22,7 @@ const { t } = useI18n()
           }"
         />
         <span class="text-xl font-bold mr-4">
-          {{ power.batteryLevel.toFixed(2) }}%</span>
+          {{ power.batteryLevel.toFixed(0) }}%</span>
       </div>
       <Skeleton v-else class="w-24 h-7" />
 
