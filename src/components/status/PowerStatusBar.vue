@@ -5,14 +5,17 @@ import { useI18n } from 'vue-i18n'
 const power = usePower()
 const { t } = useI18n()
 
-const colors = [
-  'bg-blue-500',
-  'bg-blue-600',
-  'bg-blue-700',
-  'bg-blue-800',
-  'bg-blue-900',
-  'bg-blue-950',
-]
+const colorMap: Record<string, string> = {
+  screen: 'bg-sky-500',
+  heatpipe: 'bg-indigo-500',
+  systemOther: 'bg-blue-700',
+  systemTotal: 'bg-blue-600',
+  batteryIn: 'bg-emerald-500',
+  powerLoss: 'bg-orange-400',
+}
+
+// Fixed display order — never re-sorted
+const displayOrder = ['screen', 'heatpipe', 'systemOther', 'systemTotal', 'batteryIn', 'powerLoss']
 
 const localeMap = computed(() => ({
   screen: t('status.screen_power'),
@@ -51,30 +54,27 @@ const handle = watchEffect(() => {
     delete parts.systemTotal
   }
 
-  let current = 0
-  const sorted = Object.entries(parts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([key, value]) => {
-      const ret = [key, current] as const
-      current += value
-      return ret
-    })
-
   const sum = power.value.isCharging
     ? power.value.systemIn + power.value.efficiencyLoss
     : power.value.systemLoad
-  data.value = {
-    parts: Object.entries(parts)
-      .map(([key, value]) =>
-        [key, {
-          value,
-          left: sorted[sorted.findIndex(([k]) => k === key)][1] / sum,
-          color: colors[sorted.findIndex(([k]) => k === key)],
-          locale: localeMap.value[key as keyof UnwrapRef<typeof localeMap>],
-        }],
-      ),
-    sum,
-  }
+
+  // Fixed order layout — accumulate left positions in display order
+  let current = 0
+  const ordered = displayOrder
+    .filter(key => key in parts)
+    .map(key => {
+      const value = parts[key]
+      const left = current / sum
+      current += value
+      return [key, {
+        value,
+        left,
+        color: colorMap[key],
+        locale: localeMap.value[key as keyof UnwrapRef<typeof localeMap>],
+      }] as BarData['parts'][0]
+    })
+
+  data.value = { parts: ordered, sum }
 })
 
 const hovered = ref<string | null>(null)
