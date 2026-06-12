@@ -77,16 +77,35 @@ pub fn start_sender<R: Runtime>(
         .unwrap_or(true);
 
     async_runtime::spawn(async move {
+        let mut last_status_text = String::new();
+        let mut last_system_total: f32 = 0.0;
+        let mut last_battery_level: f32 = 0.0;
+        let mut last_charging = false;
+
         loop {
             select! {
                 _ = timer.tick() => {
                     let smc = smc_conn.read_sensor();
-                    PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
-                        .emit(&app)
-                        .unwrap();
-                    PowerTickEvent {
-                        data: (&get_mac_ioreg().unwrap(), &smc).into(),
-                    }.emit(&app).unwrap();
+
+                    // Always emit tray update (throttled in tray_icon.rs)
+                    let updated = PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging);
+                    updated.emit(&app).unwrap();
+
+                    // Only emit PowerTickEvent to frontend when data changes meaningfully:
+                    // >0.3W system power delta, >1% battery delta, or charging state change
+                    let charging_changed = smc.is_charging() != last_charging;
+                    let power_delta = (smc.system_total - last_system_total).abs();
+                    let battery_delta = (smc.current_capacity - last_battery_level).abs();
+
+                    if charging_changed || power_delta > 0.3 || battery_delta > 1.0 {
+                        PowerTickEvent {
+                            data: (&get_mac_ioreg().unwrap(), &smc).into(),
+                        }.emit(&app).unwrap();
+
+                        last_system_total = smc.system_total;
+                        last_battery_level = smc.current_capacity;
+                        last_charging = smc.is_charging();
+                    }
                 }
                 Some(msg) = rx.recv() => match msg {
                     SenderMessage::ImmediateSend => {
@@ -97,6 +116,9 @@ pub fn start_sender<R: Runtime>(
                         PowerTickEvent {
                             data:  (&get_mac_ioreg().unwrap(), &smc).into()
                         }.emit(&app).unwrap();
+                        last_system_total = smc.system_total;
+                        last_battery_level = smc.current_capacity;
+                        last_charging = smc.is_charging();
                     },
                     SenderMessage::ChangeInterval(interval) => {
                         timer = time::interval(if interval < Duration::from_millis(500) {
