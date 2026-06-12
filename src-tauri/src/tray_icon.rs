@@ -1,4 +1,5 @@
 use std::process;
+use std::time::{Duration, Instant};
 
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
@@ -68,8 +69,28 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
         }
     });
 
+    // Throttle tray icon updates: only call set_title when the displayed text
+    // changes OR at least 5 seconds have elapsed. This avoids redundant menu bar
+    // redraws that spam WindowServer with state change notifications.
+    use std::sync::Mutex;
+    struct TrayState {
+        last_title: String,
+        last_update: Instant,
+    }
+    let state = std::sync::Arc::new(Mutex::new(TrayState {
+        last_title: String::from("0 w"),
+        last_update: Instant::now(),
+    }));
+    let max_stale = Duration::from_secs(5);
     PowerUpdatedEvent::listen(app.app_handle(), move |event| {
-        tray_icon.set_title(Some(event.payload.0)).unwrap();
+        let new_title = &event.payload.0;
+        let mut s = state.lock().unwrap();
+        let elapsed = s.last_update.elapsed();
+        if s.last_title != *new_title || elapsed >= max_stale {
+            tray_icon.set_title(Some(new_title)).unwrap();
+            s.last_title = new_title.clone();
+            s.last_update = Instant::now();
+        }
     });
 
     app.popover_window().unwrap().to_popover();
