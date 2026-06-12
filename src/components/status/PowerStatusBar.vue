@@ -6,12 +6,12 @@ const power = usePower()
 const { t } = useI18n()
 
 const colorMap: Record<string, string> = {
-  screen: 'bg-sky-500',
+  screen: 'bg-blue-500',
   heatpipe: 'bg-indigo-500',
-  systemOther: 'bg-blue-700',
-  systemTotal: 'bg-blue-600',
-  batteryIn: 'bg-emerald-500',
-  powerLoss: 'bg-orange-400',
+  systemOther: 'bg-cyan-500',
+  systemTotal: 'bg-cyan-500',
+  batteryIn: 'bg-blue-500',
+  powerLoss: 'bg-yellow-500',
 }
 
 // Fixed display order — never re-sorted
