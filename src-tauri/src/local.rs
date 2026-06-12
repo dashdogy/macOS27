@@ -38,7 +38,9 @@ pub fn status_bar_text(
 
 impl PowerUpdatedEvent {
     pub fn new(value: f32) -> Self {
-        Self(format!("{:.1} w", value))
+        // Right-align to 4 chars (e.g. " 9.8 w", "10.2 w") to prevent
+        // menu bar width jitter when the value changes (#5)
+        Self(format!("{:4.1} w", value))
     }
 
     pub fn new_with(

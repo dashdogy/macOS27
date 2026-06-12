@@ -9,6 +9,7 @@ interface ShimmerProps {
   spread?: number
   delay?: number
   repeatDelay?: number
+  reverse?: boolean
 }
 
 const props = defineProps<ShimmerProps>()
@@ -25,7 +26,7 @@ const animDelay = computed(() => `${props.delay ?? 200}ms`)
       '[--base-color:#a1a1aa] [--base-gradient-color:#000]',
       '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
       'dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]',
-      preference.animationsEnabled ? 'shimmer-animate' : '',
+      preference.animationsEnabled ? (props.reverse ? 'shimmer-animate-reverse' : 'shimmer-animate') : '',
       props.class,
     )"
     :style="{
@@ -44,8 +45,16 @@ const animDelay = computed(() => `${props.delay ?? 200}ms`)
   from { background-position: 100% center; }
   to { background-position: 0% center; }
 }
+@keyframes shimmer-slide-reverse {
+  from { background-position: 0% center; }
+  to { background-position: 100% center; }
+}
 .shimmer-animate {
   will-change: background-position;
   animation: shimmer-slide var(--shimmer-duration, 1200ms) linear var(--shimmer-delay, 200ms) infinite;
+}
+.shimmer-animate-reverse {
+  will-change: background-position;
+  animation: shimmer-slide-reverse var(--shimmer-duration, 1200ms) linear var(--shimmer-delay, 200ms) infinite;
 }
 </style>

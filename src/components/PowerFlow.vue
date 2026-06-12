@@ -102,6 +102,7 @@ const power = usePower()
         <Shimmer
           :delay="2000"
           :repeat-delay="1500"
+          :reverse="!power.isCharging"
           class="rounded-full mx-2 w-full
           [--base-color:theme(colors.blue.500)]
           [--base-gradient-color:theme(colors.blue.300)]
