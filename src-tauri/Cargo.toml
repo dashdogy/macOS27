@@ -1,8 +1,11 @@
 [package]
 name = "powerflow"
 version = "0.2.3"
-description = "Monitoring power usage of mac and iOS devices"
-authors = [ "Samuel Lyon" ]
+description = "Powerflow compatibility and performance distribution for macOS 27"
+authors = [ "The Powerflow Team", "Samuel Lyon", "lzt1008", "Luis Ferreira", "Michael Robles" ]
+repository = "https://github.com/dashdogy/macOS27"
+homepage = "https://github.com/dashdogy/macOS27"
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
