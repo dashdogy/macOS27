@@ -13,7 +13,7 @@ This project is intentionally a fork of a fork, with its Git history preserved:
 1. [lzt1008/powerflow](https://github.com/lzt1008/powerflow) is the original upstream project, created and maintained by **lzt1008 and the Powerflow contributors**.
 2. [lmqferreira/powerflow](https://github.com/lmqferreira/powerflow) is the immediate upstream performance fork, maintained by **Luis Ferreira**.
 3. [dashdogy/macOS27](https://github.com/dashdogy/macOS27) adds macOS 27 compatibility and packages the Apple Silicon build as **Powerflow macOS27**.
-
+This macOS27 update was vibe coded using GPT-5.6 Sol.
 Powerflow macOS27 does not claim authorship of the upstream work. Copyright remains with the respective authors and contributors. See [NOTICE.md](NOTICE.md) and [LICENSE](LICENSE).
 
 ## What this distribution adds
