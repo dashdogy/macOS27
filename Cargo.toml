@@ -12,3 +12,9 @@ tpower = { path = "crates/tpower" }
 pedantic = "warn"
 nursery = "warn"
 cargo = "warn"
+
+# macOS 27's dyld rejects the 4-byte-aligned string table currently emitted when
+# Rust strips build-time dylibs. Proc macros and build scripts are not shipped in
+# the application bundle, so retain their symbols until the toolchain fix lands.
+[profile.release.build-override]
+strip = false

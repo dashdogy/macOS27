@@ -1,7 +1,6 @@
 use std::{
     collections::VecDeque,
     ffi::CString,
-    mem,
     ops::{Deref, Div},
     time::Duration,
 };
@@ -235,7 +234,7 @@ pub fn get_mac_ioreg_dict() -> anyhow::Result<CFDictionary> {
 
     let result = unsafe { IOServiceGetMatchingService(master_port, matching_dict) };
 
-    let mut properties: CFMutableDictionaryRef = unsafe { mem::zeroed() };
+    let mut properties: CFMutableDictionaryRef = std::ptr::null_mut();
     if unsafe { IORegistryEntryCreateCFProperties(result, &mut properties, kCFAllocatorDefault, 0) }
         != kIOReturnSuccess
     {
@@ -247,7 +246,8 @@ pub fn get_mac_ioreg_dict() -> anyhow::Result<CFDictionary> {
 
 pub fn get_mac_ioreg() -> anyhow::Result<IORegistry> {
     let dic = get_mac_ioreg_dict()?;
-    unsafe { mem::transmute(dict_into::<repr::IORegistry>(dic)) }
+    let data = dict_into::<repr::IORegistry>(dic)?;
+    Ok(data.try_into()?)
 }
 
 #[derive(Debug)]

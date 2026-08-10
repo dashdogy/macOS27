@@ -1,11 +1,9 @@
-use std::mem;
-
 use core_foundation::{base::TCFType, dictionary::CFDictionary};
 use thiserror::Error;
 
 use crate::{
     cfdic,
-    de::{repr, IORegistry},
+    de::{repr, IORegistry, IORegistryDataError, IORegistryDiagnostic},
     ffi::wrapper::ServiceConnection,
     util::{dict_into, DictParseError},
 };
@@ -18,6 +16,8 @@ pub enum DeviceDataError {
     Receive(i32),
     #[error("Failed to parse message: {0}")]
     Parse(#[from] DictParseError),
+    #[error("Invalid IORegistry data: {0}")]
+    InvalidData(#[from] IORegistryDataError),
 }
 
 pub fn get_device_ioreg(conn: &ServiceConnection) -> Result<IORegistry, DeviceDataError> {
@@ -37,7 +37,6 @@ pub fn get_device_ioreg(conn: &ServiceConnection) -> Result<IORegistry, DeviceDa
     };
 
     let data = dict_into::<repr::IORegistryDiagnostic>(response)?;
-
-    // SAFETY: IORegistry and repr::IORegistry are disigned to be the same
-    unsafe { mem::transmute(data.diagnostics.ioregistry) }
+    let data = IORegistryDiagnostic::try_from(data)?;
+    Ok(data.diagnostics.ioregistry)
 }

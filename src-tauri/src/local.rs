@@ -65,6 +65,31 @@ pub struct PowerTickEvent {
     pub data: NormalizedResource,
 }
 
+fn emit_local_power_tick<R: Runtime>(app: &tauri::AppHandle<R>, smc: &SMCPowerData) -> bool {
+    let ioreg = match get_mac_ioreg() {
+        Ok(ioreg) => ioreg,
+        Err(error) => {
+            log::error!("Fatal local battery data error: {error:#}");
+            eprintln!("Powerflow fatal local battery data error: {error:#}");
+            app.exit(1);
+            return false;
+        }
+    };
+
+    if let Err(error) = (PowerTickEvent {
+        data: (&ioreg, smc).into(),
+    })
+    .emit(app)
+    {
+        log::error!("Fatal local power event error: {error:#}");
+        eprintln!("Powerflow fatal local power event error: {error:#}");
+        app.exit(1);
+        return false;
+    }
+
+    true
+}
+
 pub fn start_sender<R: Runtime>(
     app: &impl Manager<R>,
     mut rx: mpsc::Receiver<SenderMessage>,
@@ -113,9 +138,9 @@ pub fn start_sender<R: Runtime>(
                     let battery_delta = (smc.current_capacity - last_battery_level).abs();
 
                     if charging_changed || power_delta > 0.3 || battery_delta > 1.0 {
-                        PowerTickEvent {
-                            data: (&get_mac_ioreg().unwrap(), &smc).into(),
-                        }.emit(&app).unwrap();
+                        if !emit_local_power_tick(&app, &smc) {
+                            return;
+                        }
 
                         last_system_total = smc.system_total;
                         last_battery_level = smc.current_capacity;
@@ -128,9 +153,9 @@ pub fn start_sender<R: Runtime>(
                         PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
                             .emit(&app)
                             .unwrap();
-                        PowerTickEvent {
-                            data:  (&get_mac_ioreg().unwrap(), &smc).into()
-                        }.emit(&app).unwrap();
+                        if !emit_local_power_tick(&app, &smc) {
+                            return;
+                        }
                         last_system_total = smc.system_total;
                         last_battery_level = smc.current_capacity;
                         last_charging = smc.is_charging();
@@ -160,9 +185,9 @@ pub fn start_sender<R: Runtime>(
                         // Send immediate update when a window becomes visible
                         if visible {
                             let smc = smc_conn.read_sensor();
-                            PowerTickEvent {
-                                data: (&get_mac_ioreg().unwrap(), &smc).into(),
-                            }.emit(&app).unwrap();
+                            if !emit_local_power_tick(&app, &smc) {
+                                return;
+                            }
                             last_system_total = smc.system_total;
                             last_battery_level = smc.current_capacity;
                             last_charging = smc.is_charging();
